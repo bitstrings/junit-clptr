@@ -1,5 +1,4 @@
 language: java
-language: java
 script: mvn verify javadoc:javadoc
 jdk:
   - oraclejdk7
