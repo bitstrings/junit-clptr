@@ -18,10 +18,13 @@ public class MyTest
 ## Maven dependency
 
 ```xml
-
+<dependency>
+  <groupId>org.bitstrings.test</groupId>
+  <artifactId>junit-clptr</artifactId>
+  <version>1.0</version>
+</dependency>
 ```
 
 ## What's new
 
 * Fix for "@Rule" annotated field and method
-
