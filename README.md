@@ -39,7 +39,7 @@ com.company.test.TestClass
 <dependency>
   <groupId>org.bitstrings.test</groupId>
   <artifactId>junit-clptr</artifactId>
-  <version>1.0</version>
+  <version>1.1</version>
 </dependency>
 ```
 
