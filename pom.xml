@@ -38,7 +38,7 @@ limitations under the License.
     <packaging>jar</packaging>
 
     <description>
-        ClassLoader per Test runner for JUnit 4.12+ based on myfaces-test "TestPerClassLoader".
+        ClassLoader per Test runner for JUnit 4.12+ based on myfaces-test "TestPerClassLoaderRunner".
     </description>
 
     <inceptionYear>2015</inceptionYear>
