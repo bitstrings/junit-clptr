@@ -21,7 +21,7 @@ Use the default file `clptr-excludes.properties` to add excluded packages or cla
 
 The file should be on the classpath.
 
-You can override the excludes file using the system property `org.bitstrings.test.junit.runner.TestClassLoader.excludes`.
+You can override the excludes file location using the system property `org.bitstrings.test.junit.runner.TestClassLoader.excludes`.
 ```
 org.bitstrings.test.junit.runner.TestClassLoader.excludes=com/company/res/clptr-excludes.properties
 ```
