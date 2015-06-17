@@ -52,11 +52,11 @@ import org.junit.runners.model.TestClass;
 public class ClassLoaderPerTestRunner
     extends NamedRunner
 {
-    private static final Logger LOGGER = Logger.getLogger(ClassLoaderPerTestRunner.class.getName());
+    private static final Logger LOG = Logger.getLogger(ClassLoaderPerTestRunner.class.getName());
 
     // The classpath is needed because the custom class loader looks there to find the classes.
-    private static String classPath;
-    private static boolean classPathDetermined = false;
+    private String classPath;
+    private boolean classPathDetermined = false;
 
     // Some data related to the class from the custom class loader.
     private TestClass testClassFromClassLoader;
@@ -77,7 +77,7 @@ public class ClassLoaderPerTestRunner
     }
 
     @Override
-    protected Object createTest()
+    protected synchronized Object createTest()
         throws Exception
     {
         // Need an instance now from the class loaded by the custom loader.
@@ -89,7 +89,8 @@ public class ClassLoaderPerTestRunner
      *
      * @throws ClassNotFoundException the class not found exception
      */
-    private void loadClassesWithCustomClassLoader() throws ClassNotFoundException
+    private void loadClassesWithCustomClassLoader()
+        throws ClassNotFoundException
     {
         ClassLoader classLoader;
 
@@ -116,7 +117,7 @@ public class ClassLoaderPerTestRunner
     }
 
     @Override
-    protected Statement methodBlock(FrameworkMethod method)
+    protected synchronized Statement methodBlock(FrameworkMethod method)
     {
         FrameworkMethod newMethod = null;
         try
@@ -147,9 +148,8 @@ public class ClassLoaderPerTestRunner
         return super.methodBlock(newMethod);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    protected Statement withAfters(FrameworkMethod method, Object target, Statement statement)
+    protected synchronized Statement withAfters(FrameworkMethod method, Object target, Statement statement)
     {
         // We now to need to search in the class from the custom loader.
         //We also need to search with the annotation loaded by the custom class loader or otherwise we don't find any method.
@@ -160,9 +160,8 @@ public class ClassLoaderPerTestRunner
         return new RunAfters(statement, afters, target);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    protected Statement withBefores(FrameworkMethod method, Object target, Statement statement)
+    protected synchronized Statement withBefores(FrameworkMethod method, Object target, Statement statement)
     {
         // We now to need to search in the class from the custom loader.
         //We also need to search with the annotation loaded by the custom class loader or otherwise we don't find any method.
@@ -174,7 +173,7 @@ public class ClassLoaderPerTestRunner
     }
 
     @Override
-    protected List<TestRule> getTestRules(Object target)
+    protected synchronized List<TestRule> getTestRules(Object target)
     {
         List<TestRule> result =
             testClassFromClassLoader
@@ -188,7 +187,7 @@ public class ClassLoaderPerTestRunner
     }
 
     @Override
-    protected List<MethodRule> rules(Object target)
+    protected synchronized List<MethodRule> rules(Object target)
     {
         List<MethodRule> rules =
             testClassFromClassLoader
@@ -206,7 +205,7 @@ public class ClassLoaderPerTestRunner
      *
      * @return the class path
      */
-    private static String getClassPath()
+    private String getClassPath()
     {
         if (classPathDetermined)
         {
@@ -276,7 +275,7 @@ public class ClassLoaderPerTestRunner
         }
         catch (Exception e)
         {
-            LOGGER.throwing("ClassLoaderTestSuite", "loadJarManifestClassPath", e);
+            LOG.throwing("ClassLoaderTestSuite", "loadJarManifestClassPath", e);
         }
 
         return null;

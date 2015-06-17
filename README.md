@@ -15,6 +15,24 @@ public class MyTest
 }
 ```
 
+### Exclude classes from isolation
+
+Use the default file `clptr-excludes.properties` to add excluded packages or classes from isolation.
+
+The file should be on the classpath.
+
+You can override the excludes file using the system property `org.bitstrings.test.junit.runner.TestClassLoader.excludes`.
+```
+org.bitstrings.test.junit.runner.TestClassLoader.excludes=com/company/res/clptr-excludes.properties
+```
+
+The file is simply a list of packages and classes:
+```
+jmockit.
+org.apache.
+com.company.test.TestClass
+```
+
 ## Maven dependency
 
 ```xml
@@ -28,3 +46,5 @@ public class MyTest
 ## What's new
 
 * Fix for "@Rule" annotated field and method
+* Threadsafe (Hopeful...)
+* Support excludes

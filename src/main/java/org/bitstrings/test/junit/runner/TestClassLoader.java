@@ -16,16 +16,19 @@
  */
 package org.bitstrings.test.junit.runner;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Properties;
 import java.util.StringTokenizer;
-import java.util.Vector;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -42,14 +45,24 @@ public class TestClassLoader
     extends ClassLoader
 {
     /** scanned class path */
-    private Vector<String> fPathItems;
+    private final List<String> fPathItems = new ArrayList<String>();
     /** default excluded paths */
-    private String[] defaultExclusions = { "junit.framework.",
-            "junit.extensions.", "junit.runner.", "org.junit." };
+    private String[] defaultExclusions =
+    {
+        "junit.framework.",
+        "junit.extensions.",
+        "junit.runner.",
+        "org.junit."
+    };
     /** name of excluded properties file */
-    static final String EXCLUDED_FILE = "excluded.properties";
+    static final String EXCLUDED_FILE = "clptr-excludes.properties";
     /** excluded paths */
-    private Vector<String> fExcluded;
+    private final List<String> fExcluded = new ArrayList<String>();
+
+    public static final String SYSTEM_PROP_BASE_NAME = TestClassLoader.class.getName();
+    public static final String SYSTEM_PROP_EXCLUDES_NAME = SYSTEM_PROP_BASE_NAME + ".excludes";
+
+    private String excludesPath;
 
     /**
      * Constructs a TestCaseLoader. It scans the class path
@@ -67,17 +80,17 @@ public class TestClassLoader
     public TestClassLoader(String classPath)
     {
         scanPath(classPath);
-        readExcludedPackages();
+        readInternalExcludes();
+        readExcludes();
     }
 
     private void scanPath(String classPath)
     {
         String separator = System.getProperty("path.separator");
-        fPathItems = new Vector<String>(10);
         StringTokenizer st = new StringTokenizer(classPath, separator);
         while (st.hasMoreTokens())
         {
-            fPathItems.addElement(st.nextToken());
+            fPathItems.add(st.nextToken());
         }
     }
 
@@ -104,7 +117,7 @@ public class TestClassLoader
     {
         for (int i = 0; i < fExcluded.size(); i++)
         {
-            if (name.startsWith(fExcluded.elementAt(i)))
+            if (name.startsWith(fExcluded.get(i)))
             {
                 return true;
             }
@@ -163,7 +176,7 @@ public class TestClassLoader
         byte[] data = null;
         for (int i = 0; i < fPathItems.size(); i++)
         {
-            String path = fPathItems.elementAt(i);
+            String path = fPathItems.get(i);
             String fileName = className.replace('.', '/') + ".class";
             if (isJar(path))
             {
@@ -279,11 +292,10 @@ public class TestClassLoader
     /**
      * Read excluded packages for which classes are read by the parent class loader.
      */
-    private void readExcludedPackages()
+    private void readInternalExcludes()
     {
-        fExcluded = new Vector<String>(10);
         for (int i = 0; i < defaultExclusions.length; i++)
-            fExcluded.addElement(defaultExclusions[i]);
+            fExcluded.add(defaultExclusions[i]);
 
         InputStream is = getClass().getResourceAsStream(EXCLUDED_FILE);
         if (is == null)
@@ -317,8 +329,39 @@ public class TestClassLoader
                 if (path.endsWith("*"))
                     path = path.substring(0, path.length() - 1);
                 if (path.length() > 0)
-                    fExcluded.addElement(path);
+                    fExcluded.add(path);
             }
+        }
+    }
+
+    public void addExclude(String packageName)
+    {
+        fExcluded.add(packageName.replace("*", ""));
+    }
+
+    private void readExcludes()
+    {
+        excludesPath = System.getProperty( SYSTEM_PROP_EXCLUDES_NAME );
+
+        if (excludesPath == null)
+        {
+            excludesPath = EXCLUDED_FILE;
+        }
+
+        try (
+            BufferedReader in =
+                new BufferedReader(
+                    new InputStreamReader(
+                        Thread.currentThread().getContextClassLoader().getResourceAsStream(excludesPath))))
+        {
+            while (in.ready())
+            {
+                addExclude(in.readLine());
+            }
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
         }
     }
 }
