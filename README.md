@@ -15,6 +15,16 @@ public class MyTest
 }
 ```
 
+## Maven dependency
+
+```xml
+<dependency>
+  <groupId>org.bitstrings.test</groupId>
+  <artifactId>junit-clptr</artifactId>
+  <version>1.1</version>
+</dependency>
+```
+
 ### Exclude classes from isolation
 
 Use the default file `clptr-excludes.properties` to add excluded packages or classes from isolation.
@@ -31,16 +41,6 @@ The file is simply a list of packages and classes:
 jmockit.
 org.apache.
 com.company.test.TestClass
-```
-
-## Maven dependency
-
-```xml
-<dependency>
-  <groupId>org.bitstrings.test</groupId>
-  <artifactId>junit-clptr</artifactId>
-  <version>1.1</version>
-</dependency>
 ```
 
 ## What's new
