@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/bitstrings/junit-clptr.svg?branch=master)](https://travis-ci.org/bitstrings/junit-clptr)
+
 # junit-clptr
 ClassLoader per Test runner for JUnit 4.12+ based on myfaces-test "TestPerClassLoaderRunner".
 
