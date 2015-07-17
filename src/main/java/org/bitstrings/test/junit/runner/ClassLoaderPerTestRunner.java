@@ -18,7 +18,6 @@ package org.bitstrings.test.junit.runner;
 
 import java.io.File;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.Vector;
@@ -71,7 +70,8 @@ public class ClassLoaderPerTestRunner
      *
      * @throws InitializationError the initialization error
      */
-    public ClassLoaderPerTestRunner(Class<?> klass) throws InitializationError
+    public ClassLoaderPerTestRunner(Class<?> klass)
+        throws InitializationError
     {
         super(klass);
     }
@@ -89,27 +89,35 @@ public class ClassLoaderPerTestRunner
      *
      * @throws ClassNotFoundException the class not found exception
      */
-    private void loadClassesWithCustomClassLoader()
+    private void loadClassesWithCustomClassLoader( FrameworkMethod method )
         throws ClassNotFoundException
     {
-        ClassLoader classLoader;
-
         // We need the classpath so that our custom loader can search for the requested classes.
         String testPath = getClassPath();
 
-        if (testPath != null)
+        TestClassLoader classLoader =
+            testPath == null
+                ? new TestClassLoader()
+                : new TestClassLoader( testPath );
+
+        ClptrExclude clptrExclude = getTestClass().getAnnotation( ClptrExclude.class );
+
+        if ( clptrExclude != null )
         {
-            classLoader = new TestClassLoader(testPath);
+            classLoader.addExcludes( clptrExclude.value() );
         }
 
-        else
-        {
-            classLoader = new TestClassLoader();
+        clptrExclude = method.getAnnotation( ClptrExclude.class );
 
+        if ( clptrExclude != null )
+        {
+            classLoader.addExcludes(clptrExclude.value() );
         }
 
         Thread.currentThread().setContextClassLoader(classLoader);
         testClassFromClassLoader = new TestClass(classLoader.loadClass(getTestClass().getJavaClass().getName()));
+
+
         // See withAfters and withBefores for the reason.
         beforeFromClassLoader = classLoader.loadClass(Before.class.getName());
         afterFromClassLoader = classLoader.loadClass(After.class.getName());
@@ -123,24 +131,17 @@ public class ClassLoaderPerTestRunner
         try
         {
             // Need the class from the custom loader now, so lets load the class.
-            loadClassesWithCustomClassLoader();
+            loadClassesWithCustomClassLoader( method );
             // The method as parameter is from the original class and thus not found in our
             // class loaded by the custom name (reflection is class loader sensitive)
             // So find the same method but now in the class from the class Loader.
-            Method methodFromNewlyLoadedClass = testClassFromClassLoader.getJavaClass().getMethod(method.getName());
-            newMethod = new FrameworkMethod(methodFromNewlyLoadedClass);
+            newMethod =
+                new FrameworkMethod(
+                        testClassFromClassLoader.getJavaClass().getMethod(method.getName()));
         }
-        catch (ClassNotFoundException e)
+        catch (Exception e)
         {
             // Show any problem nicely as a JUnit Test failure.
-            return new Fail(e);
-        }
-        catch (SecurityException e)
-        {
-            return new Fail(e);
-        }
-        catch (NoSuchMethodException e)
-        {
             return new Fail(e);
         }
 

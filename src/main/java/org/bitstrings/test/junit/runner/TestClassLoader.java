@@ -25,9 +25,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.List;
-import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -45,24 +43,15 @@ public class TestClassLoader
     extends ClassLoader
 {
     /** scanned class path */
-    private final List<String> fPathItems = new ArrayList<String>();
-    /** default excluded paths */
-    private String[] defaultExclusions =
-    {
-        "junit.framework.",
-        "junit.extensions.",
-        "junit.runner.",
-        "org.junit."
-    };
+    private final List<String> fPathItems = new ArrayList<>();
+
     /** name of excluded properties file */
-    static final String EXCLUDED_FILE = "clptr-excludes.properties";
+    private static final String EXCLUDED_FILE = "clptr-excludes.properties";
     /** excluded paths */
-    private final List<String> fExcluded = new ArrayList<String>();
+    private final List<String> fExcluded = new ArrayList<>();
 
     public static final String SYSTEM_PROP_BASE_NAME = TestClassLoader.class.getName();
     public static final String SYSTEM_PROP_EXCLUDES_NAME = SYSTEM_PROP_BASE_NAME + ".excludes";
-
-    private String excludesPath;
 
     /**
      * Constructs a TestCaseLoader. It scans the class path
@@ -81,13 +70,12 @@ public class TestClassLoader
     {
         scanPath(classPath);
         readInternalExcludes();
-        readExcludes();
+        readUserExcludes();
     }
 
     private void scanPath(String classPath)
     {
-        String separator = System.getProperty("path.separator");
-        StringTokenizer st = new StringTokenizer(classPath, separator);
+        StringTokenizer st = new StringTokenizer(classPath, System.getProperty("path.separator"));
         while (st.hasMoreTokens())
         {
             fPathItems.add(st.nextToken());
@@ -115,9 +103,9 @@ public class TestClassLoader
      */
     public boolean isExcluded(String name)
     {
-        for (int i = 0; i < fExcluded.size(); i++)
+        for (String excluded : fExcluded)
         {
-            if (name.startsWith(fExcluded.get(i)))
+            if (name.startsWith(excluded))
             {
                 return true;
             }
@@ -126,13 +114,16 @@ public class TestClassLoader
     }
 
     @Override
-    public synchronized Class loadClass(String name, boolean resolve)
+    public synchronized Class<?> loadClass(String name, boolean resolve)
             throws ClassNotFoundException
     {
-
         Class c = findLoadedClass(name);
+
         if (c != null)
+        {
             return c;
+        }
+
         //
         // Delegate the loading of excluded classes to the
         // standard class loader.
@@ -289,70 +280,49 @@ public class TestClassLoader
         return null;
     }
 
+    public void addExclude(String name)
+    {
+        fExcluded.add(name.replace("*", ""));
+
+        System.out.println( ">>> " + name );
+    }
+
+    public void addExcludes(String... names)
+    {
+        for (String name : names)
+        {
+            addExclude(name);
+        }
+    }
+
     /**
      * Read excluded packages for which classes are read by the parent class loader.
      */
     private void readInternalExcludes()
     {
-        for (int i = 0; i < defaultExclusions.length; i++)
-            fExcluded.add(defaultExclusions[i]);
-
-        InputStream is = getClass().getResourceAsStream(EXCLUDED_FILE);
-        if (is == null)
-            return;
-        Properties p = new Properties();
-        try
-        {
-            p.load(is);
-        }
-        catch (IOException e)
-        {
-            return;
-        }
-        finally
-        {
-            try
-            {
-                is.close();
-            }
-            catch (IOException e)
-            {
-            }
-        }
-        for (Enumeration e = p.propertyNames(); e.hasMoreElements();)
-        {
-            String key = (String) e.nextElement();
-            if (key.startsWith("excluded."))
-            {
-                String path = p.getProperty(key);
-                path = path.trim();
-                if (path.endsWith("*"))
-                    path = path.substring(0, path.length() - 1);
-                if (path.length() > 0)
-                    fExcluded.add(path);
-            }
-        }
+        readExcludes( this.getClass().getResource( EXCLUDED_FILE ) );
     }
 
-    public void addExclude(String packageName)
+    private void readUserExcludes()
     {
-        fExcluded.add(packageName.replace("*", ""));
-    }
-
-    private void readExcludes()
-    {
-        excludesPath = System.getProperty( SYSTEM_PROP_EXCLUDES_NAME );
+        String excludesPath = System.getProperty( SYSTEM_PROP_EXCLUDES_NAME );
 
         if (excludesPath == null)
         {
             excludesPath = EXCLUDED_FILE;
         }
 
-        try (
-            BufferedReader in =
-                new BufferedReader(
-                    new InputStreamReader(
-                        Thread.currentThread().getContextClassLoader().getResourceAsStream(excludesPath))))
+        readExcludes( Thread.currentThread().getContextClassLoader().getResource( excludesPath ) );
+    }
+
+    private void readExcludes( URL excludesUrl )
+    {
+        if ( excludesUrl == null )
+        {
+            return;
+        }
+
+        try ( BufferedReader in = new BufferedReader( new InputStreamReader( excludesUrl.openStream() ) ) )
         {
             while (in.ready())
             {
