@@ -283,8 +283,6 @@ public class TestClassLoader
     public void addExclude(String name)
     {
         fExcluded.add(name.replace("*", ""));
-
-        System.out.println( ">>> " + name );
     }
 
     public void addExcludes(String... names)
