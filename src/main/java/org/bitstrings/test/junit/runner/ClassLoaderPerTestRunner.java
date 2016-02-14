@@ -35,6 +35,7 @@ import org.junit.internal.runners.statements.RunAfters;
 import org.junit.internal.runners.statements.RunBefores;
 import org.junit.rules.MethodRule;
 import org.junit.rules.TestRule;
+import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.Statement;
@@ -63,6 +64,8 @@ public class ClassLoaderPerTestRunner
     private Object afterFromClassLoader;
     private Object ruleFromClassLoader;
 
+    private ClassLoader originalCl;
+
     /**
      * Instantiates a new test per class loader runner.
      *
@@ -74,6 +77,8 @@ public class ClassLoaderPerTestRunner
         throws InitializationError
     {
         super(klass);
+
+        originalCl = Thread.currentThread().getContextClassLoader();
     }
 
     @Override
@@ -246,7 +251,7 @@ public class ClassLoaderPerTestRunner
      *
      * @return the string
      */
-    private static String loadJarManifestClassPath(String path, String fileName)
+    private static String loadJarManifestClassPath( String path, String fileName )
     {
         File archive = new File(path);
 
@@ -289,7 +294,7 @@ public class ClassLoaderPerTestRunner
      *
      * @return true, if is jar
      */
-    private static boolean isJar(String pathEntry)
+    private static boolean isJar( String pathEntry )
     {
         return pathEntry.endsWith(".jar") || pathEntry.endsWith(".zip");
     }
@@ -301,7 +306,7 @@ public class ClassLoaderPerTestRunner
      *
      * @return the vector< string>
      */
-    private static Vector<String> scanPath(String classPath)
+    private static Vector<String> scanPath( String classPath )
     {
         String separator = System.getProperty("path.separator");
         Vector<String> pathItems = new Vector<String>(10);
@@ -311,5 +316,12 @@ public class ClassLoaderPerTestRunner
             pathItems.addElement(st.nextToken());
         }
         return pathItems;
+    }
+
+    @Override
+    protected void runChild( FrameworkMethod method, RunNotifier notifier )
+    {
+        super.runChild( method, notifier );
+        Thread.currentThread().setContextClassLoader( originalCl );
     }
 }
