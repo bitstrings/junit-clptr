@@ -10,7 +10,7 @@ Each test method will run with its very own ClassLoader which can be very useful
 <dependency>
   <groupId>org.bitstrings.test</groupId>
   <artifactId>junit-clptr</artifactId>
-  <version>1.2</version>
+  <version>1.2.2</version>
 </dependency>
 ```
 
